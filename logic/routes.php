@@ -1,11 +1,16 @@
 <?php
 
+
 namespace Route;
 class Route{
     private static function route($route, $callback): void
     {
         if (!is_callable($callback)) {
             echo "Callback not found";
+            exit();
+        }
+        if($route == "404"){
+            $callback();
             exit();
         }
         $uri = parse_url($_SERVER['REQUEST_URI']);
@@ -25,10 +30,12 @@ class Route{
             parse_str($uri["query"], $params);
         }
         $parameters = [
-            "params" => [...($params ?? []), ...($_POST ?? [])],
-            "uriParams" => $uriParams ?? []
+            "get" => [...($_GET ?? [])],
+            "post" => [...($_POST ?? [])],
+            "uri" => $uriParams ?? []
         ];
-        $callback($parameters);
+        $callbackParams = new Params($parameters);
+        $callback($callbackParams);
         exit();
     }
     static function get($route, $callback): void
@@ -38,5 +45,20 @@ class Route{
     static function post($route, $callback): void
     {
         if( $_SERVER['REQUEST_METHOD'] == 'POST' ){ self::route($route, $callback); }
+    }
+}
+
+class Params {
+    function __construct($params){
+        $this->params = $params;
+    }
+    public function get($key){
+        return $this->params['get'][$key] ?? null;
+    }
+    public function post($key){
+        return $this->params['post'][$key] ?? null;
+    }
+    public function uri($key){
+        return $this->params['uri'][$key] ?? null;
     }
 }
